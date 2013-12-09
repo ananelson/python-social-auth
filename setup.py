@@ -28,7 +28,7 @@ def long_description():
         return LONG_DESCRIPTION
 
 
-requires = ['requests>=1.1,<2.0', 'oauthlib>=0.3.8', 'six>=1.2.0']
+requires = ['requests>=1.1', 'oauthlib>=0.3.8', 'six>=1.2.0']
 
 if PY3:
     requires += ['python3-openid>=3.0.1',
