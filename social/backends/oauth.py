@@ -220,6 +220,15 @@ class BaseOAuth2(OAuthAuth):
     REDIRECT_STATE = True
     STATE_PARAMETER = True
 
+    def authorization_url(self):
+        return self.AUTHORIZATION_URL
+
+    def access_token_url(self):
+        return self.ACCESS_TOKEN_URL
+
+    def refresh_token_url(self):
+        return self.REFRESH_TOKEN_URL
+
     def state_token(self):
         """Generate csrf token to include as state parameter."""
         return self.strategy.random_string(32)
@@ -267,7 +276,8 @@ class BaseOAuth2(OAuthAuth):
             # redirect_uri matching is strictly enforced, so match the
             # providers value exactly.
             params = unquote(params)
-        return self.AUTHORIZATION_URL + '?' + params
+        print "auth params are", params
+        return self.authorization_url() + '?' + params
 
     def validate_state(self):
         """Validate state value. Raises exception on error, returns state
@@ -320,7 +330,7 @@ class BaseOAuth2(OAuthAuth):
         self.process_error(self.data)
         try:
             response = self.request_access_token(
-                self.ACCESS_TOKEN_URL,
+                self.access_token_url(),
                 data=self.auth_complete_params(self.validate_state()),
                 headers=self.auth_headers(),
                 method=self.ACCESS_TOKEN_METHOD
@@ -358,7 +368,7 @@ class BaseOAuth2(OAuthAuth):
 
     def refresh_token(self, token, *args, **kwargs):
         params = self.refresh_token_params(token, *args, **kwargs)
-        url = self.REFRESH_TOKEN_URL or self.ACCESS_TOKEN_URL
+        url = self.refresh_token_url() or self.access_token_url()
         method = self.REFRESH_TOKEN_METHOD
         key = 'params' if method == 'GET' else 'data'
         request_args = {'headers': self.auth_headers(),
@@ -367,8 +377,11 @@ class BaseOAuth2(OAuthAuth):
         request = self.request(url, **request_args)
         return self.process_refresh_token_response(request, *args, **kwargs)
 
-    def revoke_token_url(self, token, uid):
+    def revoke_token_base_url(self):
         return self.REVOKE_TOKEN_URL
+
+    def revoke_token_url(self, token, uid):
+        return self.revoke_token_url()
 
     def revoke_token_params(self, token, uid):
         return {}
@@ -380,7 +393,7 @@ class BaseOAuth2(OAuthAuth):
         return response.status_code == 200
 
     def revoke_token(self, token, uid):
-        if self.REVOKE_TOKEN_URL:
+        if self.revoke_token_base_url():
             url = self.revoke_token_url(token, uid)
             params = self.revoke_token_params(token, uid)
             headers = self.revoke_token_headers(token, uid)
